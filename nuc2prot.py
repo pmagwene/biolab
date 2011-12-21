@@ -64,8 +64,8 @@ def translate_codons(codons, tbl=stdcodons_dna_table):
     return AAs
     
 
-def translate_dna(dnaseq, tbl=stdcodons_dna_table):
-    codons = to_codons(dnaseq)
+def translate_dna(dnaseq, tbl=stdcodons_dna_table, removegaps=False):
+    codons = to_codons(dnaseq, removegaps)
     AAs = translate_codons(codons, tbl)
     return ''.join(AAs)     
 
@@ -156,7 +156,7 @@ def _fasta_itr_from_file(file):
 
 def _fasta_itr_from_name(fname):
     "Provide an iteration through the fasta records in the file named fname. "
-    f = open(fname)
+    f = open(fname, 'rU')
     for rec in _fasta_itr_from_file(f):
         yield rec
     f.close()
@@ -293,11 +293,11 @@ def write_fasta_records(recs, outfile, llen=70):
     f.close()
 
 
-def translate_fasta_file(fname):
+def translate_fasta_file(fname, removegaps=True):
     nucrecs = [i for i in fasta_itr(fname)]
     protrecs = []
     for rec in nucrecs:
-        protseq = translate_dna(rec.sequence)
+        protseq = translate_dna(rec.sequence, removegaps=removegaps)
         newrec = FastaRecord(rec.header, protseq)
         protrecs.append(newrec)
     return protrecs
@@ -328,11 +328,14 @@ if __name__ == '__main__':
                         help='Type of action to perform (default=translate).')
     parser.add_argument('--protfile', type=argparse.FileType('r'), required=False,
                         help="Protein FASTA file to be used for threading routine.")
+                        
+    parser.add_argument('--removegaps', action="store_true", default=False)
 
     args = parser.parse_args()
     
     if args.action == 'translate':
-        protrecs = translate_fasta_file(args.infile)
+        print args.removegaps
+        protrecs = translate_fasta_file(args.infile, removegaps=args.removegaps)
         recstr = fasta_records_as_string(protrecs)
         args.outfile.write(recstr)
         
